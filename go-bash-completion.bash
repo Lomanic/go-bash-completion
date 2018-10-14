@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # install in /etc/bash_completion.d/ or your personal directory
 
 complete -f -X '!*.8' 8l
@@ -30,13 +32,15 @@ _go()
 
   local cmd="${COMP_WORDS[1]}"
 
-  local cmds="build clean doc env fix fmt get
-    install list run test tool version vet"
-  local addhelp="gopath importpath remote
-    testflag testfunc"
+  # for each new Go version, generate cmds with: go help | awk '/The commands are:/,/Use / { print $1 }' | tail -n +3 | head -n -2 | tr "\n" " "
+  local cmds="bug build clean doc env fix fmt generate get install list mod run test tool version vet"
+  # for each new Go version, generate addhelp with: go help | awk '/Additional help topics:/,/Use / { print $1 }' | tail -n +3 | head -n -2 | tr "\n" " "
+  local addhelp="buildmode c cache environment filetype go.mod gopath gopath-get goproxy importpath modules module-get packages testflag testfunc"
   local other="help"
-  local env_vars="GOARCH GOBIN GOEXE GOHOSTARCH GOHOSTOS GOOS GOPATH GORACE
-    GOROOT GOTOOLDIR GO15VENDOREXPERIMENT CC GOGCCFLAGS CXX CGO_ENABLED"
+  # for each new Go version, generate env_vars with: go env | cut -d= -f1 | tr "\n" " "
+  local env_vars="GOARCH GOBIN GOCACHE GOEXE GOFLAGS GOHOSTARCH GOHOSTOS GOOS GOPATH GOPROXY GORACE GOROOT GOTMPDIR GOTOOLDIR GCCGO CC CXX CGO_ENABLED GOMOD CGO_CFLAGS CGO_CPPFLAGS CGO_CXXFLAGS CGO_FFLAGS CGO_LDFLAGS PKG_CONFIG GOGCCFLAGS"
+  # for Go1.11+, generate mod with: go help mod | awk '/The commands are:/,/Use / { print $1 }' | tail -n +3 | head -n -2 | tr "\n" " "
+  local mod="download edit graph init tidy vendor verify why"
 
   if [ "$COMP_CWORD" == 1 ]; then
     for opt in $cmds; do
@@ -48,6 +52,8 @@ _go()
   fi
 
   case "$cmd" in
+    'bug')
+      ;;
     'build')
       case "$prev" in
         '-o')
@@ -118,6 +124,8 @@ _go()
       _go_importpath_cache
       COMPREPLY=(`_go_importpath "$cur"`)
       ;;
+    'generate')
+      ;; # TODO: Implement something
     'get')
       case "$prev" in
         '-p')
@@ -159,6 +167,11 @@ _go()
           fi
           ;;
       esac
+      ;;
+    'mod')
+      if [ "$COMP_CWORD" == 2 ]; then
+        COMPREPLY=($(compgen -W "$mod" -- "$cur"))
+      fi
       ;;
     'run')
       if [[ "$cur" == -* && "$prev" != *.go ]]; then
